@@ -70,7 +70,18 @@ El servidor estará disponible en:
 | `POST` | `/api/v1/auth/login/json` | Público | Login mediante JSON payload |
 | `GET` | `/api/v1/auth/me` | Autenticado | Obtiene la información del usuario en sesión |
 | `GET` | `/api/v1/auth/admin/users` | Admin | Lista todos los usuarios registrados |
-| `GET` | `/debug_settings` | DEBUG only | UI Web interactiva para pruebas de registro (con rol), login y tokens |
+| `GET` | `/debug_settings` | DEBUG only | UI Web interactiva para pruebas de registro (con rol), login, tokens e inferencia |
+
+---
+
+## 🤖 Endpoints de Inferencia de IA (RunPod / Ollama)
+
+| Método | Endpoint | Acceso | Descripción |
+|---|---|---|---|
+| `GET` | `/api/v1/inference/status` | Autenticado | Comprueba la conectividad con la instancia de RunPod |
+| `GET` | `/api/v1/inference/models` | Autenticado | Lista los modelos de IA disponibles (`llama3.1:8b`, etc.) |
+| `POST` | `/api/v1/inference/chat` | Autenticado | Envía un historial de mensajes y recibe la respuesta del LLM |
+| `POST` | `/api/v1/inference/generate` | Autenticado | Generación de texto a partir de un prompt individual |
 
 ---
 

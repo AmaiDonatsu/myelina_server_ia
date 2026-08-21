@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Myelina Server IA - Debug Settings & Auth UI</title>
+    <title>Myelina Server IA - Debug Settings & Inferencia IA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -113,6 +113,10 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         }
 
+        .card-full {
+            grid-column: 1 / -1;
+        }
+
         .card-header {
             margin-bottom: 20px;
         }
@@ -146,6 +150,7 @@
         input[type="text"],
         input[type="email"],
         input[type="password"],
+        textarea,
         select {
             width: 100%;
             background-color: var(--bg-tertiary);
@@ -158,7 +163,12 @@
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input:focus, select:focus {
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
@@ -209,6 +219,15 @@
 
         .btn-secondary:hover {
             opacity: 0.9;
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #1f6feb, #8957e5);
+            color: #ffffff;
+        }
+
+        .btn-ai:hover {
+            opacity: 0.92;
         }
 
         .btn-admin {
@@ -276,7 +295,7 @@
             font-family: var(--font-mono);
             font-size: 0.85rem;
             color: #7ee787;
-            max-height: 320px;
+            max-height: 280px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-all;
@@ -336,6 +355,18 @@
             border: 1px solid rgba(63, 185, 80, 0.4);
             color: #7ee787;
         }
+
+        .ai-chat-response {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            min-height: 60px;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
@@ -343,7 +374,7 @@
     <header>
         <div class="brand-title">
             <span>⚡ Myelina Server IA</span>
-            <span style="font-size: 1rem; color: var(--text-muted); font-weight: normal;">| Control Debug</span>
+            <span style="font-size: 1rem; color: var(--text-muted); font-weight: normal;">| Control Debug & Inferencia</span>
         </div>
         <div class="badge-debug">
             Modo Debug Activo (.env)
@@ -351,7 +382,7 @@
     </header>
 
     <div class="container">
-        <!-- Card 1: Sign Up / Registro con Selector de Rol -->
+        <!-- Card 1: Registro con Selector de Rol -->
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">📝 Registro de Usuario</h2>
@@ -415,7 +446,7 @@
                 </button>
             </form>
 
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 24px 0;">
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
 
             <div>
                 <h3 style="font-size: 1rem; margin-bottom: 12px;">Estado de Sesión</h3>
@@ -454,7 +485,56 @@
             </div>
         </div>
 
-        <!-- Card 3: Consola de Respuestas de la API -->
+        <!-- Card 3: Panel de Inferencia IA con RunPod -->
+        <div class="card card-full">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 class="card-title">🤖 Inferencia de IA (RunPod / Ollama)</h2>
+                    <p class="card-description">Envía mensajes al modelo alojado en RunPod (requiere estar autenticado con JWT).</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btn-check-ai-status" class="btn-outline" style="width: auto; padding: 6px 12px; font-size: 0.8rem;" type="button">
+                        🔌 Probar Conexión RunPod
+                    </button>
+                    <button id="btn-list-ai-models" class="btn-outline" style="width: auto; padding: 6px 12px; font-size: 0.8rem;" type="button">
+                        📋 Listar Modelos
+                    </button>
+                </div>
+            </div>
+
+            <div id="ai-alert" class="alert"></div>
+
+            <form id="ai-chat-form">
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="ai-system-prompt">Instrucción del Sistema (System Prompt)</label>
+                        <textarea id="ai-system-prompt" rows="3">Eres un asistente de IA útil, experto y conciso del servidor Myelina.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="ai-user-prompt">Mensaje del Usuario (Prompt)</label>
+                        <textarea id="ai-user-prompt" rows="3" placeholder="Escribe tu pregunta o mensaje para la IA..." required></textarea>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">
+                        Modelo activo: <strong style="color: var(--accent-purple);">llama3.1:8b</strong> en RunPod
+                    </div>
+                    <button id="btn-send-ai" type="submit" class="btn-ai" style="width: auto; padding: 10px 24px;">
+                        ✨ Enviar a la IA (POST /api/v1/inference/chat)
+                    </button>
+                </div>
+            </form>
+
+            <div style="margin-top: 20px;">
+                <label>Respuesta del Modelo de IA:</label>
+                <div id="ai-response-box" class="ai-chat-response">
+                    <em>La respuesta generada por el modelo de IA aparecerá aquí...</em>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Consola de Respuestas de la API -->
         <div class="console-container">
             <div class="console-header">
                 <h3 style="font-size: 1rem;">📡 Consola de Respuestas de la API (JSON Output)</h3>
@@ -475,6 +555,7 @@
         const sessUser = document.getElementById("sess-user");
         const sessRole = document.getElementById("sess-role");
         const sessToken = document.getElementById("sess-token");
+        const aiResponseBox = document.getElementById("ai-response-box");
 
         function logOutput(title, status, data) {
             const time = new Date().toLocaleTimeString();
@@ -527,7 +608,6 @@
 
                 if (res.ok) {
                     showAlert("register-alert", `¡Usuario '${data.username}' registrado exitosamente con rol '${data.role}'!`, "success");
-                    // Auto-fill login
                     document.getElementById("login-username").value = username;
                     document.getElementById("login-password").value = password;
                 } else {
@@ -623,6 +703,104 @@
                 }
             } catch (err) {
                 logOutput("GET /api/v1/auth/admin/users (Error)", 500, { error: err.message });
+            }
+        });
+
+        // Test AI Status
+        document.getElementById("btn-check-ai-status").addEventListener("click", async () => {
+            if (!currentToken) {
+                alert("Inicia sesión para probar la conexión con RunPod");
+                return;
+            }
+            try {
+                const res = await fetch("/api/v1/inference/status", {
+                    headers: { "Authorization": `Bearer ${currentToken}` }
+                });
+                const data = await res.json();
+                logOutput("GET /api/v1/inference/status", res.status, data);
+                if (res.ok) {
+                    alert("🟢 Conexión exitosa con RunPod (Ollama activo)");
+                } else {
+                    alert("🔴 Error conectando con RunPod: " + JSON.stringify(data));
+                }
+            } catch (err) {
+                logOutput("GET /api/v1/inference/status (Error)", 500, { error: err.message });
+            }
+        });
+
+        // List AI Models
+        document.getElementById("btn-list-ai-models").addEventListener("click", async () => {
+            if (!currentToken) {
+                alert("Inicia sesión para listar los modelos de RunPod");
+                return;
+            }
+            try {
+                const res = await fetch("/api/v1/inference/models", {
+                    headers: { "Authorization": `Bearer ${currentToken}` }
+                });
+                const data = await res.json();
+                logOutput("GET /api/v1/inference/models", res.status, data);
+                if (res.ok) {
+                    const names = data.models.map(m => m.name).join(", ");
+                    alert(`Modelos disponibles en RunPod:\n${names}`);
+                }
+            } catch (err) {
+                logOutput("GET /api/v1/inference/models (Error)", 500, { error: err.message });
+            }
+        });
+
+        // AI Chat form submit
+        document.getElementById("ai-chat-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!currentToken) {
+                showAlert("ai-alert", "Debes iniciar sesión primero para enviar peticiones de inferencia.", "error");
+                return;
+            }
+
+            const sysPrompt = document.getElementById("ai-system-prompt").value.trim();
+            const userPrompt = document.getElementById("ai-user-prompt").value.trim();
+            const btnSend = document.getElementById("btn-send-ai");
+
+            btnSend.disabled = true;
+            btnSend.textContent = "⏳ Generando respuesta...";
+            aiResponseBox.innerHTML = "<span style='color: var(--accent-primary);'>Procesando inferencia en RunPod con llama3.1:8b...</span>";
+
+            const messages = [];
+            if (sysPrompt) {
+                messages.push({ role: "system", content: sysPrompt });
+            }
+            messages.push({ role: "user", content: userPrompt });
+
+            try {
+                const res = await fetch("/api/v1/inference/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({
+                        messages: messages,
+                        temperature: 0.7,
+                        stream: false
+                    })
+                });
+
+                const data = await res.json();
+                logOutput("POST /api/v1/inference/chat", res.status, data);
+
+                if (res.ok) {
+                    aiResponseBox.textContent = data.message.content;
+                    showAlert("ai-alert", "Respuesta recibida exitosamente de la IA.", "success");
+                } else {
+                    aiResponseBox.innerHTML = `<span style='color: var(--accent-red);'>Error: ${data.detail || "Error en inferencia"}</span>`;
+                    showAlert("ai-alert", data.detail || "Error al invocar la IA", "error");
+                }
+            } catch (err) {
+                logOutput("POST /api/v1/inference/chat (Error)", 500, { error: err.message });
+                aiResponseBox.innerHTML = `<span style='color: var(--accent-red);'>Error de conexión con el servidor: ${err.message}</span>`;
+            } finally {
+                btnSend.disabled = false;
+                btnSend.textContent = "✨ Enviar a la IA (POST /api/v1/inference/chat)";
             }
         });
 

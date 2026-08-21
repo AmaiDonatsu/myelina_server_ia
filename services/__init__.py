@@ -1,4 +1,3 @@
-"""
-Módulo de servicios: contendrá la lógica de inferencia para IA, carga de pesos
-del modelo, gestión del historial de conversación y servicios auxiliares.
-"""
+from services.inference import InferenceService, inference_service
+
+__all__ = ["InferenceService", "inference_service"]

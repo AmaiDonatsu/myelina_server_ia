@@ -6,6 +6,16 @@ from schemas.user import (
     Token,
     TokenData,
 )
+from schemas.inference import (
+    MessageRole,
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+    GenerateRequest,
+    GenerateResponse,
+    ModelInfo,
+    ModelsListResponse,
+)
 
 __all__ = [
     "UserBase",
@@ -14,4 +24,12 @@ __all__ = [
     "UserResponse",
     "Token",
     "TokenData",
+    "MessageRole",
+    "ChatMessage",
+    "ChatRequest",
+    "ChatResponse",
+    "GenerateRequest",
+    "GenerateResponse",
+    "ModelInfo",
+    "ModelsListResponse",
 ]
