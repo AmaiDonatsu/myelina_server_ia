@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Página no encontrada | Myelina Server IA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #090d13;
+            --bg-card: #131822;
+            --border-color: #262f3d;
+            --text-primary: #f0f6fc;
+            --text-muted: #8b949e;
+            --accent-cyan: #58a6ff;
+            --accent-purple: #bc8cff;
+            --accent-red: #f85149;
+            --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(88, 166, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(188, 140, 255, 0.05) 0%, transparent 50%);
+        }
+
+        .error-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 48px 36px;
+            max-width: 580px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+            position: relative;
+            backdrop-filter: blur(8px);
+        }
+
+        .error-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), var(--accent-purple), transparent);
+            border-radius: 999px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(88, 166, 255, 0.25);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .glitch-404 {
+            font-size: 6.5rem;
+            font-weight: 800;
+            line-height: 1;
+            font-family: var(--font-mono);
+            background: linear-gradient(135deg, #ffffff 30%, var(--accent-cyan) 70%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            letter-spacing: -2px;
+        }
+
+        .error-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .error-description {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .path-box {
+            background-color: #0b0e14;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 32px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #7ee787;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .path-box span.label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .actions {
+                grid-template-columns: 1fr;
+            }
+            .glitch-404 {
+                font-size: 5rem;
+            }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1f6feb, #238636);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 12px rgba(31, 111, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: var(--text-muted);
+            transform: translateY(-1px);
+        }
+
+        .btn-debug {
+            grid-column: 1 / -1;
+            background-color: rgba(210, 153, 34, 0.15);
+            color: #e3b341;
+            border: 1px solid rgba(210, 153, 34, 0.4);
+            margin-top: 4px;
+        }
+
+        .btn-debug:hover {
+            background-color: rgba(210, 153, 34, 0.25);
+        }
+
+        footer {
+            margin-top: 28px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div class="brand-badge">
+            ⚡ Myelina Server IA
+        </div>
+
+        <div class="glitch-404">404</div>
+
+        <h1 class="error-title">Ruta o Recurso No Encontrado</h1>
+        <p class="error-description">
+            La dirección solicitada no existe o no se encuentra disponible en el servidor de inferencia.
+        </p>
+
+        <div class="path-box" id="path-container">
+            <span class="label">Ruta:</span>
+            <code id="requested-path">{{ path }}</code>
+        </div>
+
+        <div class="actions">
+            <a href="/" class="btn btn-outline">
+                🏠 Inicio
+            </a>
+            <a href="/api/v1/docs" class="btn btn-primary">
+                📚 Documentación API
+            </a>
+            <a href="/debug_settings" class="btn btn-debug">
+                🛠️ Panel Debug Settings
+            </a>
+        </div>
+
+        <footer>
+            Myelina Server IA &bull; HTTP 404 Not Found
+        </footer>
+    </div>
+
+    <script>
+        // Si no fue reemplazado en el servidor por templating, detecta la ruta actual del navegador
+        const pathElement = document.getElementById("requested-path");
+        if (pathElement && (pathElement.textContent === "{{ path }}" || pathElement.textContent.trim() === "")) {
+            pathElement.textContent = window.location.pathname;
+        }
+    </script>
+</body>
+</html>

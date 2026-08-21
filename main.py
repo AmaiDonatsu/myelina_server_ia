@@ -5,7 +5,7 @@ import uvicorn
 
 from core.config import settings
 from core.database import engine, Base
-from routes import api_router, debug_router
+from routes import api_router, debug_router, error_router, register_error_handlers
 
 
 @asynccontextmanager
@@ -38,6 +38,10 @@ app.add_middleware(
 # Incluir enrutadores
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(debug_router)
+app.include_router(error_router)
+
+# Registrar manejadores globales de errores (404 HTML/JSON)
+register_error_handlers(app)
 
 
 @app.get("/", tags=["General"])
