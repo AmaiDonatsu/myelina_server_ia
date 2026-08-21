@@ -80,7 +80,11 @@ def test_inference_chat_with_auth(client, auth_token):
             headers={"Authorization": f"Bearer {auth_token}"},
             json={
                 "messages": [
-                    {"role": "user", "content": "Hola mundo"}
+                    {"role": "system", "content": "Eres un asistente amigable."},
+                    {"role": "user", "content": "Hola, ¿cómo te llamas?"},
+                    {"role": "assistant", "content": "Me llamo Myelina IA."},
+                    {"role": "user", "content": "¿Qué puedes hacer?"},
+                    {"role": "agent", "content": "Puedo razonar y responder preguntas."}
                 ]
             },
         )

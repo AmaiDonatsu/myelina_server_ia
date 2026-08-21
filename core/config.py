@@ -1,7 +1,7 @@
 from pathlib import Path
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
+
 # Ruta absoluta al archivo .env en la raíz del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = BASE_DIR / ".env"
@@ -12,23 +12,23 @@ if ENV_FILE.exists():
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = os.getenv("PROJECT_NAME")
-    VERSION: str = os.getenv("VERSION")
-    API_V1_STR: str = os.getenv("API_V1_STR")
-    DEBUG: bool = os.getenv("DEBUG") == "True"
+    PROJECT_NAME: str = "Myelina Server IA"
+    VERSION: str = "0.1.0"
+    API_V1_STR: str = "/api/v1"
+    DEBUG: bool = True
 
     # Security
-    SECRET_KEY: str = os.getenv("SECRET_KEY")
+    SECRET_KEY: str = "myelina_default_secret_key_change_me_in_production_12345"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    DATABASE_URL: str = "sqlite:///./myelina.db"
 
     # AI Model Inference (RunPod / Ollama)
-    AI_INFERENCE_URL: str = os.getenv("AI_INFERENCE_URL")
-    DEFAULT_AI_MODEL: str = os.getenv("DEFAULT_AI_MODEL")
-    AI_REQUEST_TIMEOUT: float = float(os.getenv("AI_REQUEST_TIMEOUT"))
+    AI_INFERENCE_URL: str = "https://iapx06g61diaeb-11434.proxy.runpod.net"
+    DEFAULT_AI_MODEL: str = "llama3.1:8b"
+    AI_REQUEST_TIMEOUT: float = 120.0
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,

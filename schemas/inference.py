@@ -7,6 +7,8 @@ class MessageRole(str, Enum):
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
+    AGENT = "agent"
+    MODEL = "model"
 
 
 class ChatMessage(BaseModel):

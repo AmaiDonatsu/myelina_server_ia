@@ -55,6 +55,14 @@ class InferenceService:
                 detail=f"Error de conexión con el servidor de inferencia: {str(exc)}",
             )
 
+    @staticmethod
+    def _normalize_role(role: Any) -> str:
+        role_str = role.value if hasattr(role, "value") else str(role)
+        role_lower = role_str.lower()
+        if role_lower in ("agent", "model"):
+            return "assistant"
+        return role_lower
+
     async def chat(self, request: ChatRequest) -> ChatResponse:
         """Envía un historial de conversación al modelo y retorna la respuesta generada."""
         url = f"{self.base_url}/api/chat"
@@ -64,7 +72,7 @@ class InferenceService:
             "model": model_name,
             "messages": [
                 {
-                    "role": m.role.value if hasattr(m.role, "value") else str(m.role),
+                    "role": self._normalize_role(m.role),
                     "content": m.content,
                 }
                 for m in request.messages
@@ -117,7 +125,7 @@ class InferenceService:
             "model": model_name,
             "messages": [
                 {
-                    "role": m.role.value if hasattr(m.role, "value") else str(m.role),
+                    "role": self._normalize_role(m.role),
                     "content": m.content,
                 }
                 for m in request.messages
