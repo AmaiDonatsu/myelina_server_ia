@@ -65,11 +65,12 @@ El servidor estará disponible en:
 
 | Método | Endpoint | Acceso | Descripción |
 |---|---|---|---|
-| `POST` | `/api/v1/auth/register` | Público | Registro de usuarios (`user` o `admin`) |
+| `POST` | `/api/v1/auth/register` | Público | Registro de usuarios (selección libre de rol en `DEBUG=True`) |
 | `POST` | `/api/v1/auth/login` | Público | Login estándar OAuth2 Form (integrado con Swagger) |
 | `POST` | `/api/v1/auth/login/json` | Público | Login mediante JSON payload |
 | `GET` | `/api/v1/auth/me` | Autenticado | Obtiene la información del usuario en sesión |
 | `GET` | `/api/v1/auth/admin/users` | Admin | Lista todos los usuarios registrados |
+| `GET` | `/debug_settings` | DEBUG only | UI Web interactiva para pruebas de registro (con rol), login y tokens |
 
 ---
 

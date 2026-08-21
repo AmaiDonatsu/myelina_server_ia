@@ -1,10 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Myelina Server IA"
     VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
+    DEBUG: bool = True
     
     # Security
     SECRET_KEY: str = "myelina_default_secret_key_change_me_in_production_12345"

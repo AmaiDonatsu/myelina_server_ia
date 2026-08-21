@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Myelina Server IA - Debug Settings & Auth UI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #f0f6fc;
+            --text-muted: #8b949e;
+            --accent-primary: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-amber: #d29922;
+            --accent-purple: #bc8cff;
+            --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+        }
+
+        header {
+            max-width: 1200px;
+            margin: 0 auto 28px auto;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .brand-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-title span {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge-debug {
+            background-color: rgba(210, 153, 34, 0.15);
+            color: var(--accent-amber);
+            border: 1px solid rgba(210, 153, 34, 0.4);
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-debug::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-amber);
+            box-shadow: 0 0 8px var(--accent-amber);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-description {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+        }
+
+        .combobox-role {
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .role-option-admin {
+            color: var(--accent-purple);
+            font-weight: 700;
+        }
+
+        button {
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s, opacity 0.2s, background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: #238636;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #2ea043;
+        }
+
+        .btn-secondary {
+            background-color: var(--accent-primary);
+            color: #0d1117;
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-admin {
+            background-color: #8957e5;
+            color: #ffffff;
+        }
+
+        .btn-admin:hover {
+            background-color: #a371f7;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .status-pill.active {
+            background-color: rgba(63, 185, 80, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+        }
+
+        .status-pill.inactive {
+            background-color: rgba(248, 81, 73, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+        }
+
+        .console-container {
+            grid-column: 1 / -1;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .console-output {
+            background-color: #030712;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #7ee787;
+            max-height: 320px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .session-info {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+        }
+
+        .info-val {
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .alert-error {
+            background-color: rgba(248, 81, 73, 0.15);
+            border: 1px solid rgba(248, 81, 73, 0.4);
+            color: #ff7b72;
+        }
+
+        .alert-success {
+            background-color: rgba(63, 185, 80, 0.15);
+            border: 1px solid rgba(63, 185, 80, 0.4);
+            color: #7ee787;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-title">
+            <span>⚡ Myelina Server IA</span>
+            <span style="font-size: 1rem; color: var(--text-muted); font-weight: normal;">| Control Debug</span>
+        </div>
+        <div class="badge-debug">
+            Modo Debug Activo (.env)
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Card 1: Sign Up / Registro con Selector de Rol -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📝 Registro de Usuario</h2>
+                <p class="card-description">Crea una cuenta seleccionando rol libremente (habilitado en DEBUG).</p>
+            </div>
+
+            <div id="register-alert" class="alert"></div>
+
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="reg-username">Nombre de Usuario (Username)</label>
+                    <input type="text" id="reg-username" placeholder="ej: admin_dev" required minlength="3">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-email">Correo Electrónico (Email)</label>
+                    <input type="email" id="reg-email" placeholder="ej: admin@myelina.ai" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">Contraseña (Password)</label>
+                    <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-role">Rol de Usuario (DEBUG Role Selection)</label>
+                    <select id="reg-role" class="combobox-role">
+                        <option value="user">👤 USER (Usuario Común)</option>
+                        <option value="admin" class="role-option-admin">👑 ADMIN (Usuario Administrador)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    Crear Cuenta con Rol
+                </button>
+            </form>
+        </div>
+
+        <!-- Card 2: Sign In / Inicio de Sesión y Sesión Activa -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">🔑 Iniciar Sesión (Sign In)</h2>
+                <p class="card-description">Autentícate para obtener tu token JWT Bearer.</p>
+            </div>
+
+            <div id="login-alert" class="alert"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-username">Usuario o Email</label>
+                    <input type="text" id="login-username" placeholder="Usuario o correo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" placeholder="Contraseña" required>
+                </div>
+
+                <button type="submit" class="btn-secondary">
+                    Iniciar Sesión (Obtener JWT)
+                </button>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 24px 0;">
+
+            <div>
+                <h3 style="font-size: 1rem; margin-bottom: 12px;">Estado de Sesión</h3>
+                
+                <div id="session-box">
+                    <div id="status-indicator" class="status-pill inactive">No Autenticado</div>
+
+                    <div class="session-info">
+                        <div class="info-row">
+                            <span class="info-label">Usuario:</span>
+                            <span class="info-val" id="sess-user">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Rol:</span>
+                            <span class="info-val" id="sess-role">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Token:</span>
+                            <span class="info-val" id="sess-token" style="font-size: 0.75rem;">(ninguno)</span>
+                        </div>
+                    </div>
+
+                    <div class="actions-grid">
+                        <button id="btn-test-me" class="btn-outline" type="button">
+                            👤 Probar /auth/me
+                        </button>
+                        <button id="btn-test-admin" class="btn-admin" type="button">
+                            👑 Probar /auth/admin/users
+                        </button>
+                    </div>
+
+                    <button id="btn-logout" class="btn-outline" style="margin-top: 12px; border-color: rgba(248,81,73,0.4); color: #ff7b72;" type="button">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Consola de Respuestas de la API -->
+        <div class="console-container">
+            <div class="console-header">
+                <h3 style="font-size: 1rem;">📡 Consola de Respuestas de la API (JSON Output)</h3>
+                <button id="btn-clear-console" style="width: auto; padding: 6px 12px; font-size: 0.75rem;" class="btn-outline">
+                    Limpiar Consola
+                </button>
+            </div>
+            <pre id="console-log" class="console-output">// Las respuestas de las peticiones a la API aparecerán aquí en tiempo real...</pre>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = localStorage.getItem("myelina_debug_token") || null;
+        let currentUser = null;
+
+        const consoleLog = document.getElementById("console-log");
+        const statusIndicator = document.getElementById("status-indicator");
+        const sessUser = document.getElementById("sess-user");
+        const sessRole = document.getElementById("sess-role");
+        const sessToken = document.getElementById("sess-token");
+
+        function logOutput(title, status, data) {
+            const time = new Date().toLocaleTimeString();
+            const logEntry = `[${time}] ${title} (Status: ${status})\n` + JSON.stringify(data, null, 2) + "\n\n";
+            consoleLog.textContent = logEntry + consoleLog.textContent;
+        }
+
+        function showAlert(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.className = `alert alert-${type}`;
+            el.textContent = message;
+            el.style.display = "block";
+            setTimeout(() => {
+                el.style.display = "none";
+            }, 5000);
+        }
+
+        function updateSessionUI(token, user) {
+            if (token && user) {
+                statusIndicator.className = "status-pill active";
+                statusIndicator.textContent = "Autenticado con éxito";
+                sessUser.textContent = user.username;
+                sessRole.textContent = user.role.toUpperCase();
+                sessToken.textContent = token.substring(0, 20) + "..." + token.substring(token.length - 8);
+            } else {
+                statusIndicator.className = "status-pill inactive";
+                statusIndicator.textContent = "No Autenticado";
+                sessUser.textContent = "-";
+                sessRole.textContent = "-";
+                sessToken.textContent = "(ninguno)";
+            }
+        }
+
+        // Registro
+        document.getElementById("register-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const username = document.getElementById("reg-username").value.trim();
+            const email = document.getElementById("reg-email").value.trim();
+            const password = document.getElementById("reg-password").value;
+            const role = document.getElementById("reg-role").value;
+
+            try {
+                const res = await fetch("/api/v1/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, email, password, role })
+                });
+                const data = await res.json();
+                logOutput("POST /api/v1/auth/register", res.status, data);
+
+                if (res.ok) {
+                    showAlert("register-alert", `¡Usuario '${data.username}' registrado exitosamente con rol '${data.role}'!`, "success");
+                    // Auto-fill login
+                    document.getElementById("login-username").value = username;
+                    document.getElementById("login-password").value = password;
+                } else {
+                    showAlert("register-alert", data.detail || "Error en el registro", "error");
+                }
+            } catch (err) {
+                logOutput("POST /api/v1/auth/register (Network Error)", 500, { error: err.message });
+                showAlert("register-alert", "Error de red al registrar", "error");
+            }
+        });
+
+        // Login
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const username = document.getElementById("login-username").value.trim();
+            const password = document.getElementById("login-password").value;
+
+            const formData = new URLSearchParams();
+            formData.append("username", username);
+            formData.append("password", password);
+
+            try {
+                const res = await fetch("/api/v1/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: formData.toString()
+                });
+                const data = await res.json();
+                logOutput("POST /api/v1/auth/login", res.status, data);
+
+                if (res.ok) {
+                    currentToken = data.access_token;
+                    localStorage.setItem("myelina_debug_token", currentToken);
+                    showAlert("login-alert", "¡Inicio de sesión exitoso!", "success");
+                    await fetchCurrentUser();
+                } else {
+                    showAlert("login-alert", data.detail || "Credenciales incorrectas", "error");
+                }
+            } catch (err) {
+                logOutput("POST /api/v1/auth/login (Network Error)", 500, { error: err.message });
+                showAlert("login-alert", "Error de conexión al iniciar sesión", "error");
+            }
+        });
+
+        async function fetchCurrentUser() {
+            if (!currentToken) return;
+            try {
+                const res = await fetch("/api/v1/auth/me", {
+                    headers: { "Authorization": `Bearer ${currentToken}` }
+                });
+                const data = await res.json();
+                logOutput("GET /api/v1/auth/me", res.status, data);
+
+                if (res.ok) {
+                    currentUser = data;
+                    updateSessionUI(currentToken, currentUser);
+                } else {
+                    currentToken = null;
+                    localStorage.removeItem("myelina_debug_token");
+                    updateSessionUI(null, null);
+                }
+            } catch (err) {
+                logOutput("GET /api/v1/auth/me (Network Error)", 500, { error: err.message });
+            }
+        }
+
+        // Test /me
+        document.getElementById("btn-test-me").addEventListener("click", () => {
+            if (!currentToken) {
+                alert("Primero debes iniciar sesión para probar /me");
+                return;
+            }
+            fetchCurrentUser();
+        });
+
+        // Test /admin/users
+        document.getElementById("btn-test-admin").addEventListener("click", async () => {
+            if (!currentToken) {
+                alert("Primero debes iniciar sesión para probar /admin/users");
+                return;
+            }
+            try {
+                const res = await fetch("/api/v1/auth/admin/users", {
+                    headers: { "Authorization": `Bearer ${currentToken}` }
+                });
+                const data = await res.json();
+                logOutput("GET /api/v1/auth/admin/users", res.status, data);
+
+                if (!res.ok && res.status === 403) {
+                    alert("⛔ 403 FORBIDDEN: Este usuario tiene rol 'user' y no tiene permisos de administrador.");
+                } else if (res.ok) {
+                    alert(`✅ ACCESO PERMITIDO: Eres ADMIN. Se encontraron ${data.length} usuarios.`);
+                }
+            } catch (err) {
+                logOutput("GET /api/v1/auth/admin/users (Error)", 500, { error: err.message });
+            }
+        });
+
+        // Logout
+        document.getElementById("btn-logout").addEventListener("click", () => {
+            currentToken = null;
+            currentUser = null;
+            localStorage.removeItem("myelina_debug_token");
+            updateSessionUI(null, null);
+            logOutput("LOGOUT", 200, { message: "Sesión cerrada localmente" });
+        });
+
+        // Clear console
+        document.getElementById("btn-clear-console").addEventListener("click", () => {
+            consoleLog.textContent = "// Consola reiniciada.\n";
+        });
+
+        // Auto load session if exists
+        if (currentToken) {
+            fetchCurrentUser();
+        }
+    </script>
+</body>
+</html>

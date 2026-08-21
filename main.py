@@ -5,8 +5,7 @@ import uvicorn
 
 from core.config import settings
 from core.database import engine, Base
-import models  # Ensures all models are registered with Base.metadata
-from routes import api_router
+from routes import api_router, debug_router
 
 
 @asynccontextmanager
@@ -38,6 +37,7 @@ app.add_middleware(
 
 # Incluir enrutadores
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(debug_router)
 
 
 @app.get("/", tags=["General"])
