@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from core.config import settings
 from core.database import get_db
 from core.security import (
     get_password_hash,
@@ -51,11 +52,17 @@ def register(
 
     # Hash password and save user
     hashed_pwd = get_password_hash(user_in.password)
+    user_role=UserRole.USER
+
+    if settings.DEBUG:
+        user_role = user_in.role if user_in.role else UserRole.USER
+
+
     new_user = User(
         username=user_in.username,
         email=user_in.email,
         hashed_password=hashed_pwd,
-        role=user_in.role or UserRole.USER,
+        role=user_role,
         is_active=True,
     )
     db.add(new_user)
