@@ -1,0 +1,22 @@
+[project]
+name = "myelina-server-ia"
+version = "0.1.0"
+description = "Servidor de inferencia para IA con autenticacion y control de roles"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic[email]>=2.8.0",
+    "pydantic-settings>=2.4.0",
+    "sqlalchemy>=2.0.30",
+    "pyjwt>=2.9.0",
+    "bcrypt>=4.2.0",
+    "python-multipart>=0.0.9",
+    "python-dotenv>=1.0.1",
+    "email-validator>=2.2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
