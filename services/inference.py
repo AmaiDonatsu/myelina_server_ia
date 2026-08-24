@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from typing import AsyncGenerator, Dict, Any, List
 import httpx
 from fastapi import HTTPException, status
@@ -59,8 +60,12 @@ class InferenceService:
     def _normalize_role(role: Any) -> str:
         role_str = role.value if hasattr(role, "value") else str(role)
         role_lower = role_str.lower()
-        if role_lower in ("agent", "model"):
+        if role_lower in ("agent", "model", "asistente", "assistant"):
             return "assistant"
+        if role_lower in ("usuario", "user"):
+            return "user"
+        if role_lower in ("sistema", "system"):
+            return "system"
         return role_lower
 
     async def chat(self, request: ChatRequest) -> ChatResponse:
@@ -94,11 +99,16 @@ class InferenceService:
                     )
                 data = response.json()
                 msg = data.get("message", {})
+                msg_content = msg.get("content", "")
+                created_at_val = data.get("created_at") or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
                 return ChatResponse(
                     model=data.get("model", model_name),
+                    content=msg_content,
+                    date=str(created_at_val),
                     message=ChatMessage(
-                        role=MessageRole(msg.get("role", "assistant")),
-                        content=msg.get("content", ""),
+                        role=MessageRole(self._normalize_role(msg.get("role", "assistant"))),
+                        content=msg_content,
                     ),
                     done=data.get("done", True),
                     total_duration=data.get("total_duration"),
@@ -175,9 +185,14 @@ class InferenceService:
                         detail=f"Error del modelo de IA: {response.text}",
                     )
                 data = response.json()
+                resp_content = data.get("response", "")
+                created_at_val = data.get("created_at") or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
                 return GenerateResponse(
                     model=data.get("model", model_name),
-                    response=data.get("response", ""),
+                    content=resp_content,
+                    response=resp_content,
+                    date=str(created_at_val),
                     done=data.get("done", True),
                     total_duration=data.get("total_duration"),
                 )

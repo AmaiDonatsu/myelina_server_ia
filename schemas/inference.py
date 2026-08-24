@@ -9,10 +9,14 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
     AGENT = "agent"
     MODEL = "model"
+    # Alias en español para máxima compatibilidad
+    USUARIO = "usuario"
+    ASISTENTE = "asistente"
+    SISTEMA = "sistema"
 
 
 class ChatMessage(BaseModel):
-    role: MessageRole = Field(..., description="Rol del emisor del mensaje (system, user, assistant)")
+    role: MessageRole = Field(..., description="Rol del emisor del mensaje (system, user, assistant, usuario, etc.)")
     content: str = Field(..., description="Contenido del mensaje de texto")
 
 
@@ -59,8 +63,10 @@ class GenerateRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    model: str
-    message: ChatMessage
+    model: str = Field(..., description="Nombre del modelo que generó la respuesta")
+    content: str = Field(..., description="Texto de la respuesta generada")
+    date: str = Field(..., description="Fecha/hora de generación de la respuesta")
+    message: ChatMessage = Field(..., description="Objeto del mensaje estructurado")
     done: bool = True
     total_duration: Optional[int] = None
     prompt_eval_count: Optional[int] = None
@@ -68,8 +74,10 @@ class ChatResponse(BaseModel):
 
 
 class GenerateResponse(BaseModel):
-    model: str
-    response: str
+    model: str = Field(..., description="Nombre del modelo")
+    content: str = Field(..., description="Texto generado")
+    response: str = Field(..., description="Texto generado (compatibilidad Ollama)")
+    date: str = Field(..., description="Fecha/hora de generación")
     done: bool = True
     total_duration: Optional[int] = None
 

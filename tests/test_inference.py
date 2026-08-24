@@ -72,6 +72,8 @@ def test_inference_chat_with_auth(client, auth_token):
     with patch("services.inference.inference_service.chat", new_callable=AsyncMock) as mock_chat:
         mock_chat.return_value = ChatResponse(
             model="llama3.1:8b",
+            content="Hola, soy Myelina IA.",
+            date="2026-08-22 04:45:00 UTC",
             message=ChatMessage(role=MessageRole.ASSISTANT, content="Hola, soy Myelina IA."),
             done=True,
         )
@@ -80,9 +82,9 @@ def test_inference_chat_with_auth(client, auth_token):
             headers={"Authorization": f"Bearer {auth_token}"},
             json={
                 "messages": [
-                    {"role": "system", "content": "Eres un asistente amigable."},
-                    {"role": "user", "content": "Hola, ¿cómo te llamas?"},
-                    {"role": "assistant", "content": "Me llamo Myelina IA."},
+                    {"role": "sistema", "content": "Eres un asistente amigable."},
+                    {"role": "usuario", "content": "Hola, ¿cómo te llamas?"},
+                    {"role": "asistente", "content": "Me llamo Myelina IA."},
                     {"role": "user", "content": "¿Qué puedes hacer?"},
                     {"role": "agent", "content": "Puedo razonar y responder preguntas."}
                 ]
@@ -91,6 +93,8 @@ def test_inference_chat_with_auth(client, auth_token):
         assert res.status_code == 200
         data = res.json()
         assert data["model"] == "llama3.1:8b"
+        assert data["content"] == "Hola, soy Myelina IA."
+        assert data["date"] == "2026-08-22 04:45:00 UTC"
         assert data["message"]["content"] == "Hola, soy Myelina IA."
 
 
@@ -98,7 +102,9 @@ def test_inference_generate_with_auth(client, auth_token):
     with patch("services.inference.inference_service.generate", new_callable=AsyncMock) as mock_generate:
         mock_generate.return_value = GenerateResponse(
             model="llama3.1:8b",
+            content="Respuesta generada",
             response="Respuesta generada",
+            date="2026-08-22 04:45:00 UTC",
             done=True,
         )
         res = client.post(
@@ -107,4 +113,6 @@ def test_inference_generate_with_auth(client, auth_token):
             json={"prompt": "Explica la fotosintesis"},
         )
         assert res.status_code == 200
+        assert res.json()["content"] == "Respuesta generada"
         assert res.json()["response"] == "Respuesta generada"
+        assert "date" in res.json()
