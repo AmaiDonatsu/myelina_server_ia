@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,13 +12,20 @@ from core.security import (
     create_access_token,
     get_current_user,
     get_current_admin,
+    generate_user_api_key,
 )
 from models.user import User, UserRole
+from models.token import UserToken
 from schemas.user import (
     UserCreate,
     UserLogin,
     UserResponse,
     Token,
+)
+from schemas.token import (
+    UserTokenCreate,
+    UserTokenCreatedResponse,
+    UserTokenInfoResponse,
 )
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
@@ -169,3 +177,147 @@ def list_users(
 ):
     users = db.query(User).offset(skip).limit(limit).all()
     return users
+
+
+@router.post(
+    "/tokens",
+    response_model=UserTokenCreatedResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear Token / API Key para el usuario",
+    description=(
+        "Genera un nuevo token de API con prefijo 'myelina_' vinculado a la cuenta del usuario. "
+        "El servidor calcula y almacena únicamente el hash SHA-256 en la base de datos, "
+        "y retorna el token en texto plano UNA SOLA VEZ en la respuesta. "
+        "No se permite repetir la misma etiqueta ('label') para la cuenta del mismo usuario."
+    ),
+)
+def create_user_token(
+    token_in: UserTokenCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Verificar que el usuario no tenga ya un token con el mismo label
+    existing_token = (
+        db.query(UserToken)
+        .filter(
+            UserToken.user_id == current_user.id,
+            UserToken.label == token_in.label,
+        )
+        .first()
+    )
+    if existing_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ya existe un token con la etiqueta '{token_in.label}' para tu cuenta.",
+        )
+
+    # Calcular expiración si aplica
+    expires_at = None
+    if token_in.expires_in_days:
+        expires_at = datetime.now(timezone.utc) + timedelta(days=token_in.expires_in_days)
+
+    # Generar API Key (raw_key para el cliente una sola vez, hash para la DB)
+    raw_key, key_hash, prefix = generate_user_api_key(prefix="myelina_")
+
+    # Guardar en base de datos
+    new_token = UserToken(
+        user_id=current_user.id,
+        label=token_in.label,
+        key_hash=key_hash,
+        prefix=prefix,
+        scopes=token_in.scopes or "all",
+        revoked=False,
+        expires_at=expires_at,
+    )
+    db.add(new_token)
+    db.commit()
+    db.refresh(new_token)
+
+    return UserTokenCreatedResponse(
+        id=new_token.id,
+        label=new_token.label,
+        token=raw_key,
+        prefix=new_token.prefix,
+        scopes=new_token.scopes,
+        revoked=new_token.revoked,
+        created_at=new_token.created_at,
+        expires_at=new_token.expires_at,
+        message="Token generado con éxito. Cópialo y guárdalo en un lugar seguro; no podrás volver a verlo.",
+    )
+
+
+@router.get(
+    "/tokens",
+    response_model=List[UserTokenInfoResponse],
+    summary="Listar Tokens / API Keys del usuario",
+    description="Retorna la lista de todos los tokens creados por el usuario autenticado (mostrando solo metadatos y prefijo seguro).",
+)
+def list_user_tokens(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    tokens = (
+        db.query(UserToken)
+        .filter(UserToken.user_id == current_user.id)
+        .order_by(UserToken.created_at.desc())
+        .all()
+    )
+    return tokens
+
+
+@router.post(
+    "/tokens/{token_id}/revoke",
+    summary="Revocar Token / API Key",
+    description="Marca un token específico como revocado para invalidar inmediatamente su acceso.",
+)
+def revoke_user_token(
+    token_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    token_record = (
+        db.query(UserToken)
+        .filter(
+            UserToken.id == token_id,
+            UserToken.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not token_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token no encontrado o no pertenece a tu cuenta.",
+        )
+
+    token_record.revoked = True
+    db.commit()
+    return {"message": f"Token '{token_record.label}' revocado exitosamente.", "revoked": True}
+
+
+@router.delete(
+    "/tokens/{token_id}",
+    summary="Eliminar Token / API Key",
+    description="Elimina permanentemente un token de la base de datos.",
+)
+def delete_user_token(
+    token_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    token_record = (
+        db.query(UserToken)
+        .filter(
+            UserToken.id == token_id,
+            UserToken.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not token_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token no encontrado o no pertenece a tu cuenta.",
+        )
+
+    db.delete(token_record)
+    db.commit()
+    return {"message": f"Token '{token_record.label}' eliminado exitosamente."}

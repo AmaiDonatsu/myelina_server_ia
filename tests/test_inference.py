@@ -116,3 +116,35 @@ def test_inference_generate_with_auth(client, auth_token):
         assert res.json()["content"] == "Respuesta generada"
         assert res.json()["response"] == "Respuesta generada"
         assert "date" in res.json()
+
+
+def test_inference_chat_with_api_key(client, auth_token):
+    # 1. Create a user token using the JWT auth_token
+    token_res = client.post(
+        "/api/v1/auth/tokens",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={"label": "bot_client_token"},
+    )
+    assert token_res.status_code == 201
+    api_key = token_res.json()["token"]
+
+    # 2. Call /api/v1/inference/chat using the generated API Key directly
+    with patch("services.inference.inference_service.chat", new_callable=AsyncMock) as mock_chat:
+        mock_chat.return_value = ChatResponse(
+            model="llama3.1:8b",
+            content="Respuesta autenticada con API key.",
+            date="2026-08-22 04:45:00 UTC",
+            message=ChatMessage(role=MessageRole.ASSISTANT, content="Respuesta autenticada con API key."),
+            done=True,
+        )
+        res = client.post(
+            "/api/v1/inference/chat",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "messages": [
+                    {"role": "user", "content": "Probando API Key"}
+                ]
+            },
+        )
+        assert res.status_code == 200
+        assert res.json()["content"] == "Respuesta autenticada con API key."

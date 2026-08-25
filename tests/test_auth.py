@@ -150,3 +150,96 @@ def test_role_based_access_control(client):
     assert resp_admin.status_code == 200
     users_list = resp_admin.json()
     assert len(users_list) == 2
+
+
+def test_create_and_use_user_api_key(client):
+    # 1. Register & login
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "token_master",
+            "email": "master@myelina.ai",
+            "password": "securepassword123",
+        },
+    )
+    jwt_token = client.post(
+        "/api/v1/auth/login",
+        data={"username": "token_master", "password": "securepassword123"},
+    ).json()["access_token"]
+
+    # 2. Create an API Key with label "mi_token"
+    res_create = client.post(
+        "/api/v1/auth/tokens",
+        headers={"Authorization": f"Bearer {jwt_token}"},
+        json={"label": "mi_token"},
+    )
+    assert res_create.status_code == 201
+    token_data = res_create.json()
+    assert token_data["label"] == "mi_token"
+    assert "token" in token_data
+    raw_api_key = token_data["token"]
+    assert raw_api_key.startswith("myelina_")
+    token_id = token_data["id"]
+
+    # 3. Disallow duplicate label for the same user
+    res_duplicate = client.post(
+        "/api/v1/auth/tokens",
+        headers={"Authorization": f"Bearer {jwt_token}"},
+        json={"label": "mi_token"},
+    )
+    assert res_duplicate.status_code == 400
+    assert "Ya existe un token con la etiqueta" in res_duplicate.json()["detail"]
+
+    # 4. Allow another token with a different label
+    res_token2 = client.post(
+        "/api/v1/auth/tokens",
+        headers={"Authorization": f"Bearer {jwt_token}"},
+        json={"label": "mi_segundo_token"},
+    )
+    assert res_token2.status_code == 201
+    assert res_token2.json()["label"] == "mi_segundo_token"
+
+    # 5. Access protected route (/me) directly with the raw API Key (NO JWT session needed)
+    res_me = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {raw_api_key}"},
+    )
+    assert res_me.status_code == 200
+    assert res_me.json()["username"] == "token_master"
+
+    # 6. List user tokens (does not leak raw key)
+    res_list = client.get(
+        "/api/v1/auth/tokens",
+        headers={"Authorization": f"Bearer {raw_api_key}"},
+    )
+    assert res_list.status_code == 200
+    tokens = res_list.json()
+    assert len(tokens) == 2
+    for t in tokens:
+        assert "token" not in t
+        assert "prefix" in t
+
+    # 7. Revoke token
+    res_revoke = client.post(
+        f"/api/v1/auth/tokens/{token_id}/revoke",
+        headers={"Authorization": f"Bearer {jwt_token}"},
+    )
+    assert res_revoke.status_code == 200
+    assert res_revoke.json()["revoked"] is True
+
+    # 8. Access with revoked token should fail (401)
+    res_me_revoked = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {raw_api_key}"},
+    )
+    assert res_me_revoked.status_code == 401
+    assert "revocado" in res_me_revoked.json()["detail"]
+
+
+def test_invalid_and_expired_api_keys(client):
+    # Invalid key
+    res = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": "Bearer myelina_invalidkey1234567890"},
+    )
+    assert res.status_code == 401

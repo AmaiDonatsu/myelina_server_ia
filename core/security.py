@@ -1,5 +1,7 @@
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, Tuple
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -9,6 +11,7 @@ from sqlalchemy.orm import Session
 from core.config import settings
 from core.database import get_db
 from models.user import User, UserRole
+from models.token import UserToken
 from schemas.user import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -62,25 +65,125 @@ def decode_access_token(token: str) -> TokenData:
         raise credentials_exception
 
 
+def generate_user_api_key(prefix: str = "myelina_") -> Tuple[str, str, str]:
+    """
+    Genera un nuevo API Key seguro para el usuario.
+    Retorna:
+        - raw_key: La clave completa en texto plano que verá el usuario solo una vez (ej: myelina_abc123...)
+        - key_hash: El hash SHA-256 que se guardará en la base de datos
+        - key_prefix: Prefijo recortado para mostrar en listados seguros (ej: myelina_abc123...)
+    """
+    random_part = secrets.token_urlsafe(32)
+    raw_key = f"{prefix}{random_part}"
+    key_hash = hash_api_key(raw_key)
+    key_prefix = f"{raw_key[:12]}..."
+    return raw_key, key_hash, key_prefix
+
+
+def hash_api_key(raw_key: str) -> str:
+    """Calcula el hash SHA-256 de un API key en texto plano."""
+    return hashlib.sha256(raw_key.strip().encode("utf-8")).hexdigest()
+
+
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    """FastAPI dependency to retrieve the authenticated user from the JWT token."""
-    token_data = decode_access_token(token)
-    user = db.query(User).filter(User.username == token_data.username).first()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario no encontrado o credenciales invalidas",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Usuario inactivo",
-        )
-    return user
+    """
+    FastAPI dependency to retrieve the authenticated user.
+    Soporta de forma unificada:
+    1. Tokens de API con prefijo 'myelina_' (o hash registrado en la tabla user_tokens)
+    2. Tokens JWT Bearer estándar
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="No se pudieron validar las credenciales de autenticación",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    clean_token = token.strip()
+
+    # 1. Si es un API Key con prefijo 'myelina_'
+    if clean_token.startswith("myelina_"):
+        key_hash = hash_api_key(clean_token)
+        token_record = db.query(UserToken).filter(UserToken.key_hash == key_hash).first()
+        if not token_record:
+            raise credentials_exception
+
+        if token_record.revoked:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="El token de API ha sido revocado",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        if token_record.expires_at:
+            expires = token_record.expires_at
+            if expires.tzinfo is None:
+                expires = expires.replace(tzinfo=timezone.utc)
+            if expires < datetime.now(timezone.utc):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="El token de API ha expirado",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+        user = db.query(User).filter(User.id == token_record.user_id).first()
+        if not user:
+            raise credentials_exception
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Usuario inactivo",
+            )
+
+        # Actualizar last_used_at
+        token_record.last_used_at = datetime.now(timezone.utc)
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+
+        return user
+
+    # 2. Intentar validar como JWT estándar
+    try:
+        token_data = decode_access_token(clean_token)
+        user = db.query(User).filter(User.username == token_data.username).first()
+        if user is None:
+            raise credentials_exception
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Usuario inactivo",
+            )
+        return user
+    except HTTPException:
+        # 3. Fallback: verificar si es una API Key registrada sin prefijo tradicional
+        key_hash = hash_api_key(clean_token)
+        token_record = db.query(UserToken).filter(UserToken.key_hash == key_hash).first()
+        if token_record and not token_record.revoked:
+            if token_record.expires_at:
+                expires = token_record.expires_at
+                if expires.tzinfo is None:
+                    expires = expires.replace(tzinfo=timezone.utc)
+                if expires < datetime.now(timezone.utc):
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="El token de API ha expirado",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+            user = db.query(User).filter(User.id == token_record.user_id).first()
+            if user and user.is_active:
+                token_record.last_used_at = datetime.now(timezone.utc)
+                try:
+                    db.commit()
+                except Exception:
+                    db.rollback()
+                return user
+
+        raise credentials_exception
 
 
 def get_current_admin(
