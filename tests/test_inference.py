@@ -148,3 +148,36 @@ def test_inference_chat_with_api_key(client, auth_token):
         )
         assert res.status_code == 200
         assert res.json()["content"] == "Respuesta autenticada con API key."
+
+
+def test_inference_chat_with_images(client, auth_token):
+    sample_base64_img = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    with patch("services.inference.inference_service.chat", new_callable=AsyncMock) as mock_chat:
+        mock_chat.return_value = ChatResponse(
+            model="llava:7b",
+            content="En la imagen se observa un punto blanco.",
+            date="2026-08-26 00:30:00 UTC",
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="En la imagen se observa un punto blanco.",
+            ),
+            done=True,
+        )
+        res = client.post(
+            "/api/v1/inference/chat",
+            headers={"Authorization": f"Bearer {auth_token}"},
+            json={
+                "model": "llava:7b",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "¿Qué hay en esta imagen?",
+                        "images": [sample_base64_img],
+                    }
+                ],
+            },
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["model"] == "llava:7b"
+        assert "punto blanco" in data["content"]

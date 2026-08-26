@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timezone
-from typing import AsyncGenerator, Dict, Any, List
+from typing import AsyncGenerator, Dict, Any, List, Optional
 import httpx
 from fastapi import HTTPException, status
 
@@ -12,6 +12,46 @@ class InferenceService:
     def __init__(self, base_url: str = settings.AI_INFERENCE_URL, timeout: float = settings.AI_REQUEST_TIMEOUT):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+
+    def set_base_url(self, new_url: str) -> None:
+        """Actualiza dinámicamente la URL base de inferencia."""
+        self.base_url = new_url.rstrip("/")
+        settings.AI_INFERENCE_URL = self.base_url
+
+    def get_base_url(self) -> str:
+        """Retorna la URL base actual."""
+        return self.base_url
+
+    def load_from_db(self, db_session: Optional[Any] = None) -> None:
+        """Carga las configuraciones guardadas en la base de datos si existen."""
+        try:
+            from core.database import SessionLocal
+            from models.config import SystemConfig
+            session = db_session or SessionLocal()
+            try:
+                cfg = session.query(SystemConfig).filter(
+                    SystemConfig.key.in_(["runpod_port", "ai_inference_url", "AI_INFERENCE_URL", "inference_url"])
+                ).first()
+                if cfg and cfg.value:
+                    self.set_base_url(cfg.value)
+
+                model_cfg = session.query(SystemConfig).filter(
+                    SystemConfig.key.in_(["default_ai_model", "DEFAULT_AI_MODEL", "model"])
+                ).first()
+                if model_cfg and model_cfg.value:
+                    settings.DEFAULT_AI_MODEL = model_cfg.value
+
+                timeout_cfg = session.query(SystemConfig).filter(
+                    SystemConfig.key.in_(["ai_request_timeout", "AI_REQUEST_TIMEOUT", "timeout"])
+                ).first()
+                if timeout_cfg and timeout_cfg.value:
+                    self.timeout = float(timeout_cfg.value)
+                    settings.AI_REQUEST_TIMEOUT = self.timeout
+            finally:
+                if not db_session:
+                    session.close()
+        except Exception:
+            pass
 
     async def check_health(self) -> Dict[str, Any]:
         """Verifica la conectividad con la instancia de Ollama en RunPod."""
@@ -73,15 +113,19 @@ class InferenceService:
         url = f"{self.base_url}/api/chat"
         model_name = request.model or settings.DEFAULT_AI_MODEL
 
+        messages_payload = []
+        for m in request.messages:
+            msg_dict: Dict[str, Any] = {
+                "role": self._normalize_role(m.role),
+                "content": m.content,
+            }
+            if m.images:
+                msg_dict["images"] = m.images
+            messages_payload.append(msg_dict)
+
         payload = {
             "model": model_name,
-            "messages": [
-                {
-                    "role": self._normalize_role(m.role),
-                    "content": m.content,
-                }
-                for m in request.messages
-            ],
+            "messages": messages_payload,
             "stream": False,
             "options": {
                 "temperature": request.temperature,
@@ -131,15 +175,19 @@ class InferenceService:
         url = f"{self.base_url}/api/chat"
         model_name = request.model or settings.DEFAULT_AI_MODEL
 
+        messages_payload = []
+        for m in request.messages:
+            msg_dict: Dict[str, Any] = {
+                "role": self._normalize_role(m.role),
+                "content": m.content,
+            }
+            if m.images:
+                msg_dict["images"] = m.images
+            messages_payload.append(msg_dict)
+
         payload = {
             "model": model_name,
-            "messages": [
-                {
-                    "role": self._normalize_role(m.role),
-                    "content": m.content,
-                }
-                for m in request.messages
-            ],
+            "messages": messages_payload,
             "stream": True,
             "options": {
                 "temperature": request.temperature,
@@ -162,7 +210,7 @@ class InferenceService:
             yield f"data: {json.dumps({'error': str(exc)})}\n\n"
 
     async def generate(self, request: GenerateRequest) -> GenerateResponse:
-        """Genera una respuesta a partir de un prompt simple."""
+        """Genera una respuesta a partir de un prompt simple (admite imágenes en base64)."""
         url = f"{self.base_url}/api/generate"
         model_name = request.model or settings.DEFAULT_AI_MODEL
 
@@ -175,6 +223,8 @@ class InferenceService:
                 "temperature": request.temperature,
             },
         }
+        if request.images:
+            payload["images"] = request.images
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:

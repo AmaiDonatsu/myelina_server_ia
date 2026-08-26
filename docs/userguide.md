@@ -127,6 +127,8 @@ El campo `role` acepta tanto términos en inglés como sinónimos en español:
 - `assistant`, `asistente`, `agent` o `model`: Respuestas anteriores generadas por la IA.
 
 #### Estructura de la Petición (Request Body)
+
+**Ejemplo de Chat Estándar (Texto):**
 ```json
 {
   "messages": [
@@ -146,10 +148,24 @@ El campo `role` acepta tanto términos en inglés como sinónimos en español:
 }
 ```
 
+**Ejemplo de Chat Multimodal / Visión (con Imágenes en Base64):**
+```json
+{
+  "model": "llava:7b",
+  "messages": [
+    {
+      "role": "user",
+      "content": "¿Qué hay en esta imagen?",
+      "images": ["iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="]
+    }
+  ]
+}
+```
+
 | Campo | Tipo | Requerido | Descripción |
 |---|---|---|---|
-| `messages` | Array de Objetos | **Sí** | Lista ordenada de mensajes con `role` y `content`. |
-| `model` | String | No | Nombre del modelo a invocar (por defecto: `llama3.1:8b`). |
+| `messages` | Array de Objetos | **Sí** | Lista ordenada de mensajes con `role`, `content` y opcionalmente `images: ["<base64>"]`. |
+| `model` | String | No | Nombre del modelo a invocar (ej. `llama3.1:8b`, `llava:7b`). |
 | `temperature` | Float (0.0 - 2.0) | No | Control de creatividad/aleatoriedad (por defecto: `0.7`). |
 | `top_p` | Float (0.0 - 1.0) | No | Muestreo por núcleo (por defecto: `0.9`). |
 | `stream` | Booleano | No | `false` para respuesta JSON única, `true` para Server-Sent Events (SSE). |
@@ -469,6 +485,41 @@ curl -X POST "http://localhost:8000/api/v1/inference/chat" \
        "model": "llama3.1:8b"
      }'
 ```
+
+---
+
+---
+
+## Configuración Dinámica del Servidor (`/config` — Solo Administradores)
+
+Los administradores pueden modificar parámetros del backend en tiempo real (por ejemplo, cambiar la URL de RunPod / Ollama sin editar el archivo `.env` ni reiniciar el proceso).
+
+### Actualizar la URL de RunPod / Inferencia
+- **Método:** `POST /config` (o `POST /api/v1/config`)
+- **Headers:** `Authorization: Bearer <TOKEN_ADMIN>`
+- **Body:**
+```json
+{
+  "runpod_port": "https://04tenxdnwyyxfp-11434.proxy.runpod.net"
+}
+```
+- **Respuesta (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Configuración actualizada con éxito: runpod_port",
+  "current_config": {
+    "runpod_port": "https://04tenxdnwyyxfp-11434.proxy.runpod.net",
+    "ai_inference_url": "https://04tenxdnwyyxfp-11434.proxy.runpod.net",
+    "default_ai_model": "llama3.1:8b",
+    "ai_request_timeout": 120.0
+  }
+}
+```
+
+### Consultar Configuración Actual
+- **Método:** `GET /config`
+- **Headers:** `Authorization: Bearer <TOKEN_ADMIN>`
 
 ---
 

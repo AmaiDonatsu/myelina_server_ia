@@ -18,23 +18,31 @@ class MessageRole(str, Enum):
 class ChatMessage(BaseModel):
     role: MessageRole = Field(..., description="Rol del emisor del mensaje (system, user, assistant, usuario, etc.)")
     content: str = Field(..., description="Contenido del mensaje de texto")
+    images: Optional[List[str]] = Field(
+        default=None,
+        description="Lista opcional de imágenes codificadas en base64 para modelos multimodales/visión (ej. llava:7b, llama3.2-vision)",
+        json_schema_extra={"example": ["iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="]}
+    )
 
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage] = Field(
         ...,
         min_length=1,
-        description="Historial de conversación con la IA",
+        description="Historial de conversación con la IA (admite texto e imágenes en base64 para modelos de visión)",
         json_schema_extra={
             "example": [
-                {"role": "system", "content": "Eres un asistente de IA experto y conciso."},
-                {"role": "user", "content": "¿Qué es la mielina en neurociencia?"}
+                {
+                    "role": "user",
+                    "content": "¿Qué hay en esta imagen?",
+                    "images": ["<imagen_en_base64_aquí>"]
+                }
             ]
         }
     )
     model: Optional[str] = Field(
         default=None,
-        description="Nombre del modelo a utilizar. Si es omitido, usa el modelo predeterminado configurado (llama3.1:8b)"
+        description="Nombre del modelo a utilizar (ej. llama3.1:8b, llava:7b). Si es omitido, usa el modelo predeterminado configurado"
     )
     temperature: Optional[float] = Field(
         default=0.7,
@@ -57,7 +65,8 @@ class ChatRequest(BaseModel):
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., description="Prompt o instrucción individual a procesar")
     system: Optional[str] = Field(default=None, description="Instrucción de sistema opcional")
-    model: Optional[str] = Field(default=None, description="Nombre del modelo")
+    model: Optional[str] = Field(default=None, description="Nombre del modelo (ej. llama3.1:8b, llava:7b)")
+    images: Optional[List[str]] = Field(default=None, description="Lista opcional de imágenes en base64")
     temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0)
     stream: Optional[bool] = Field(default=False)
 

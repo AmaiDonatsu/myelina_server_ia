@@ -23,6 +23,11 @@ from schemas.token import (
     UserTokenInfoResponse,
 )
 
+from schemas.config import (
+    ConfigUpdateRequest,
+    ConfigResponse,
+)
+
 __all__ = [
     "UserBase",
     "UserCreate",
@@ -33,6 +38,8 @@ __all__ = [
     "UserTokenCreate",
     "UserTokenCreatedResponse",
     "UserTokenInfoResponse",
+    "ConfigUpdateRequest",
+    "ConfigResponse",
     "MessageRole",
     "ChatMessage",
     "ChatRequest",

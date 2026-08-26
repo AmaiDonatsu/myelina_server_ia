@@ -5,13 +5,22 @@ import uvicorn
 
 from core.config import settings
 from core.database import engine, Base
-from routes import api_router, debug_router, error_router, register_error_handlers
+from services.inference import inference_service
+from routes import (
+    api_router,
+    config_router,
+    debug_router,
+    error_router,
+    register_error_handlers,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize SQLite database tables
     Base.metadata.create_all(bind=engine)
+    # Cargar configuraciones dinámicas desde BD si existen
+    inference_service.load_from_db()
     yield
     # Shutdown: Cleanup resources (if needed)
 
@@ -37,6 +46,7 @@ app.add_middleware(
 
 # Incluir enrutadores
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(config_router)
 app.include_router(debug_router)
 app.include_router(error_router)
 
