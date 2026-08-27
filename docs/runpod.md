@@ -115,53 +115,78 @@ preocuparte por memorizar el formato de cada familia de modelos.
 
 ---
 
-Para comenzar a trabajar con ollama desde runpod primero:
+## Desplegar Ollama en RunPod
 
-- En la sección hub, buscar el template ollama
+Para comenzar a trabajar con Ollama desde RunPod, sigue estos pasos:
+
+### 1. Busca el template de Ollama
+
+En la sección **Hub**, busca el template de Ollama.
 
 <img src="../media/ollama_template.png" />
 
-ir a configure pod
+### 2. Configura el pod
+
+Click en **Configure Pod**.
+
 <img src="../media/configure.png" />
 
+### 3. Selecciona una GPU
 
-- Seleccionar una gpu
+Elige la GPU según tu necesidad. Para un modelo de 7-8B parámetros cuantizado, una GPU con 16-24GB de VRAM (ej. RTX 4090) es más que suficiente.
 
 <img src="../media/select_gpu.png" />
 
+### 4. Últimas configuraciones y deploy
 
-- Ultimas configuraciones y deploy
+Revisa el resto de la configuración (storage, puertos expuestos) y dale **Deploy**.
+
 <img src="../media/deploy.png" />
 
+Al ejecutarlo, en el panel derecho va a aparecer la información de conexión, mostrando tanto la conexión HTTP como la SSH.
 
-## De vuelta en la terminal 
+<img src="../media/ssh.png" />
 
--  conectar vía ssh
+El http será útil para configurarlo en tu aplicación server o cliente para enviar datos a inferencia y obtener la respuesta del modelo de forma más sencilla.
+
+### 5. Conéctate por SSH
+
+RunPod te da un comando de ejemplo con la dirección exacta a la que conectarte. Este comando asume que tu llave SSH se llama `id_ed25519` (el nombre por default).
+
+- Si generaste tu llave con el nombre por default, copia y ejecuta el comando tal cual te lo dan.
+- Si en el paso de generar tu llave SSH le pusiste otro nombre (para no sobreescribir una llave que ya tenías), reemplaza `id_ed25519` en el comando por el nombre que elegiste.
+
+---
+
+## De vuelta en la terminal
+
+**Conéctate vía SSH:**
 ```sh
-ssh tu_codigo@ssh.runpod.io -i ~/.ssh/runpod_ssh
+ssh tu_codigo@ssh.runpod.io -i ~/.ssh/runpod_ssh # o id_ed25519, según el nombre de tu llave
 ```
 
--  Verifica que Ollama esté corriendo
+**Verifica que Ollama esté corriendo:**
 ```sh
 ollama list
-``` 
-- no bloquear terminal
+```
+
+Si el comando anterior da error de conexión, arráncalo manualmente. El `&` al final lo manda a segundo plano para no bloquear la terminal:
 ```sh
 ollama serve &
 ```
--  
+
+**Configura dónde se guardan los modelos descargados**, para que persistan aunque detengas el pod (por default, Ollama guarda en una ruta que se pierde al hacer Stop):
 ```sh
 export OLLAMA_MODELS=/workspace/ollama_models
 mkdir -p /workspace/ollama_models
 ```
 
-- descargar modelo  
+**Descarga un modelo:**
 ```sh
 ollama pull llama3.1:8b
 ```
 
-- correr llama para probar
+**Corre el modelo para probarlo** directo desde la terminal, antes de conectarlo a cualquier API:
 ```sh
 ollama run llama3.1:8b
 ```
-
