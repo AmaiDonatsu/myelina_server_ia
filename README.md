@@ -4,7 +4,7 @@ Servidor de inferencia para Inteligencia Artificial construido con **FastAPI**, 
 
 ---
 
-## 📁 Estructura del Proyecto y Organización de Módulos
+## Estructura del Proyecto y Organización de Módulos
 
 ```text
 myelina_server_ia/
@@ -37,7 +37,7 @@ myelina_server_ia/
 
 ---
 
-## 🚀 Inicio Rápido con `uv`
+## Inicio Rápido con `uv`
 
 ### 1. Activar el entorno virtual
 ```bash
@@ -61,31 +61,36 @@ El servidor estará disponible en:
 
 ---
 
-## 🔐 Endpoints de Autenticación y Seguridad
+## Endpoints de Autenticación y Seguridad
 
 | Método | Endpoint | Acceso | Descripción |
 |---|---|---|---|
 | `POST` | `/api/v1/auth/register` | Público | Registro de usuarios (selección libre de rol en `DEBUG=True`) |
 | `POST` | `/api/v1/auth/login` | Público | Login estándar OAuth2 Form (integrado con Swagger) |
 | `POST` | `/api/v1/auth/login/json` | Público | Login mediante JSON payload |
-| `GET` | `/api/v1/auth/me` | Autenticado | Obtiene la información del usuario en sesión |
+| `GET` | `/api/v1/auth/me` | Autenticado (JWT / API Key) | Obtiene la información del usuario en sesión |
 | `GET` | `/api/v1/auth/admin/users` | Admin | Lista todos los usuarios registrados |
+| `POST` | `/api/v1/auth/tokens` | Autenticado | Crea un nuevo API Key con prefijo `myelina_` |
+| `GET` | `/api/v1/auth/tokens` | Autenticado | Lista los tokens creados por el usuario (metadatos) |
+| `POST` | `/api/v1/auth/tokens/{id}/revoke` | Autenticado | Revoca un token inmediatamente |
+| `DELETE` | `/api/v1/auth/tokens/{id}` | Autenticado | Elimina un token permanentemente |
+| `GET`, `POST` | `/config` (o `/api/v1/config`) | Admin | Ver o actualizar configuraciones dinámicas (`runpod_port`, etc.) |
 | `GET` | `/debug_settings` | DEBUG only | UI Web interactiva para pruebas de registro (con rol), login, tokens e inferencia |
 
 ---
 
-## 🤖 Endpoints de Inferencia de IA (RunPod / Ollama)
+## Endpoints de Inferencia de IA (RunPod / Ollama)
 
 | Método | Endpoint | Acceso | Descripción |
 |---|---|---|---|
 | `GET` | `/api/v1/inference/status` | Autenticado | Comprueba la conectividad con la instancia de RunPod |
-| `GET` | `/api/v1/inference/models` | Autenticado | Lista los modelos de IA disponibles (`llama3.1:8b`, etc.) |
-| `POST` | `/api/v1/inference/chat` | Autenticado | Envía un historial de mensajes y recibe la respuesta del LLM |
-| `POST` | `/api/v1/inference/generate` | Autenticado | Generación de texto a partir de un prompt individual |
+| `GET` | `/api/v1/inference/models` | Autenticado | Lista los modelos de IA disponibles (`llama3.1:8b`, `llava:7b`, etc.) |
+| `POST` | `/api/v1/inference/chat` | Autenticado | Chat con historial (soporta texto y visión multimodal con `images: ["<base64>"]`) |
+| `POST` | `/api/v1/inference/generate` | Autenticado | Generación de texto/visión a partir de un prompt individual |
 
 ---
 
-## 🧪 Ejecutar Pruebas
+## Ejecutar Pruebas
 ```bash
 uv run pytest
 ```
